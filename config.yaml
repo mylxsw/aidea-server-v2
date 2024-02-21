@@ -1,0 +1,58 @@
+
+### 会话加密密钥，请务必修改为一个随机的字符串
+session_secret: "aidea_123456"
+
+### 数据库配置 
+### (账号:密码@tcp(数据库地址:端口)/数据库名?charset=utf8mb4&parseTime=True&loc=Local)
+db_uri: "root:123456@tcp(localhost:3306)/aidea_server?charset=utf8mb4&parseTime=True&loc=Local"
+
+### Redis 配置
+redis_host: "127.0.0.1"
+redis_port: 6379
+# redis_password: ""
+
+### 是否启用跨域支持
+# enable_cors: false
+
+### 是否在日志中输出 SQL 语句
+# debug_with_sql: false
+
+### Universal Link 配置，留空则使用以下默认值
+# universal_link_config: |
+#   {"applinks":{"apps":[],"details":[{"appID":"N95437SZ2A.cc.aicode.flutter.askaide.askaide","paths":["/wechat-login/*","/wechat-links/*"]}]}}
+
+### prometheus 监控密钥，留空则不需要鉴权
+# prometheus_token: ""
+
+### HTTP 代理放置，支持 http、https、socks5，代理类型由 URL schema 决定，如果 scheme 为空，则默认为 http
+# proxy_url: ""
+
+### 任务队列：用于处理图片生成、邮件发送、短信发送、用户注册等耗时任务
+### 这里指任务队列工作线程（Goroutine）数量，设置为 0 则不启用任务队列，该进程实例无法处理上述任务
+queue_workers: 10
+
+### 是否启用定时任务
+enable_scheduler: true
+
+### 邮件发送配置
+### 用于发送邮件验证码、通知等
+mail:
+  from: "AIdea"
+  host: "smtp.qiye.aliyun.com"
+  port: 465
+  username: "ai@example.com"
+  password: "123456"
+  use_ssl: true
+
+### Apple 账号配置
+### 用于提供 Apple 登录、Apple 支付服务
+apple:
+  team_id: ""
+  key_id: ""
+  secret: ""
+
+### 微信配置
+### 用于提供微信登录服务
+wechat:
+  app_id: ""
+  secret: ""
