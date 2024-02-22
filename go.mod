@@ -6,6 +6,7 @@ require (
 	github.com/Timothylock/go-signin-with-apple v0.2.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis_rate/v10 v10.0.1
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/go-version v1.6.0
@@ -19,6 +20,7 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/speps/go-hashids/v2 v2.0.1
+	github.com/tideland/gorest v2.15.5+incompatible
 	github.com/wagslane/go-password-validator v0.3.0
 	golang.org/x/crypto v0.19.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
@@ -54,7 +56,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/tideland/golib v4.24.2+incompatible // indirect
-	github.com/tideland/gorest v2.15.5+incompatible // indirect
 	github.com/urfave/cli/v2 v2.23.7 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/net v0.17.0 // indirect

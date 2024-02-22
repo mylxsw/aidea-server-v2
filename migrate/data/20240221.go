@@ -90,11 +90,11 @@ func Migrate20240221(m *migrate.Manager) {
 		builder.Json("config").Nullable(true).Comment("Config")
 	})
 
-	m.Schema("20240221").Create("user", func(builder *migrate.Builder) {
+	m.Schema("20240221").Create("users", func(builder *migrate.Builder) {
 		builder.Increments("id")
 		builder.Timestamps(0)
 
-		builder.TinyInteger("user_type", false, true).Nullable(false).Comment("User Type: 0-普通用户，1-内部用户，2-测试用户，3-例外用户")
+		builder.TinyInteger("user_type", false, true).Nullable(false).Default(migrate.RawExpr("0")).Comment("User Type: 0-普通用户，1-内部用户，2-测试用户，3-例外用户")
 		builder.String("phone", 20).Nullable(true).Unique().Comment("Phone")
 		builder.String("email", 100).Nullable(true).Unique().Comment("Email")
 		builder.String("password", 255).Nullable(true).Comment("Password")

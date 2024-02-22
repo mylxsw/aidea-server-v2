@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/mylxsw/aidea-chat-server/api"
 	"github.com/mylxsw/aidea-chat-server/config"
 	"github.com/mylxsw/aidea-chat-server/internal/consumer"
