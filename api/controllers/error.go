@@ -1,4 +1,4 @@
 package controllers
 
-const InternalServerError = "Internal Server Error"
-const NotFoundError = "Not Found"
+const InternalServerError = "internal server error"
+const NotFoundError = "not found"

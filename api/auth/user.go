@@ -21,6 +21,11 @@ type User struct {
 	UnionID       string    `json:"union_id,omitempty"`
 }
 
+// IsAnonymous is it an anonymous user?
+func (u User) IsAnonymous() bool {
+	return u.ID == 0
+}
+
 func (u User) ExtraPermissionUser() bool {
 	return u.UserType == repo.UserTypeExtraPermission
 }

@@ -34,7 +34,7 @@ type AccessToken struct {
 	ErrMsg  string `json:"errmsg,omitempty"`
 }
 
-// OAuthAccessToken 获取微信 access token
+// OAuthAccessToken 获取微信 access jwt
 func (wc *WeChat) OAuthAccessToken(ctx context.Context, code string) (*AccessToken, error) {
 	resp, err := misc.RestyClient(2).R().
 		SetContext(ctx).
@@ -48,7 +48,7 @@ func (wc *WeChat) OAuthAccessToken(ctx context.Context, code string) (*AccessTok
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("request wechat access token failed: %s", resp.String())
+		return nil, fmt.Errorf("request wechat access jwt failed: %s", resp.String())
 	}
 
 	var accessToken AccessToken
@@ -57,7 +57,7 @@ func (wc *WeChat) OAuthAccessToken(ctx context.Context, code string) (*AccessTok
 	}
 
 	if accessToken.ErrCode != 0 {
-		return nil, fmt.Errorf("request wechat access token failed: %s", accessToken.ErrMsg)
+		return nil, fmt.Errorf("request wechat access jwt failed: %s", accessToken.ErrMsg)
 	}
 
 	return &accessToken, nil

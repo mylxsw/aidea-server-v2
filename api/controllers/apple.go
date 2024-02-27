@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/mylxsw/aidea-chat-server/config"
+	"github.com/mylxsw/aidea-chat-server/pkg/jwt"
 	"github.com/mylxsw/aidea-chat-server/pkg/repo"
-	"github.com/mylxsw/aidea-chat-server/pkg/token"
 	"github.com/mylxsw/asteria/log"
 	"github.com/mylxsw/glacier/infra"
 	"github.com/mylxsw/glacier/web"
@@ -29,7 +29,7 @@ func (ctl *AppleAuthController) Register(router web.Router) {
 	})
 }
 
-func (ctl *AppleAuthController) signInWithApple(ctx context.Context, webCtx web.Context, userRepo *repo.UserRepo, tk *token.Token) web.Response {
+func (ctl *AppleAuthController) signInWithApple(ctx context.Context, webCtx web.Context, userRepo *repo.UserRepo, tk *jwt.Token) web.Response {
 	log.WithFields(log.Fields{
 		"code":     webCtx.Input("code"),
 		"id_token": webCtx.Input("id_token"),

@@ -9,13 +9,14 @@ import (
 	"github.com/mylxsw/aidea-chat-server/internal/consumer"
 	"github.com/mylxsw/aidea-chat-server/internal/queue"
 	"github.com/mylxsw/aidea-chat-server/migrate"
+	"github.com/mylxsw/aidea-chat-server/pkg/chat"
+	"github.com/mylxsw/aidea-chat-server/pkg/jwt"
 	"github.com/mylxsw/aidea-chat-server/pkg/mail"
 	"github.com/mylxsw/aidea-chat-server/pkg/proxy"
 	"github.com/mylxsw/aidea-chat-server/pkg/rate"
 	"github.com/mylxsw/aidea-chat-server/pkg/redis"
 	"github.com/mylxsw/aidea-chat-server/pkg/repo"
 	"github.com/mylxsw/aidea-chat-server/pkg/service"
-	"github.com/mylxsw/aidea-chat-server/pkg/token"
 	"github.com/mylxsw/aidea-chat-server/pkg/wechat"
 	"github.com/mylxsw/asteria/formatter"
 	"github.com/mylxsw/asteria/level"
@@ -78,12 +79,13 @@ func main() {
 		repo.Provider{},
 		service.Provider{},
 		api.Provider{},
-		token.Provider{},
+		jwt.Provider{},
 		wechat.Provider{},
 		mail.Provider{},
 		queue.Provider{},
 		consumer.Provider{},
 		proxy.Provider{},
+		chat.Provider{},
 	)
 
 	app.MustRun(ins)

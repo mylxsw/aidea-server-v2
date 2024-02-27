@@ -171,7 +171,7 @@ func (ctl *UserController) Destroy(ctx context.Context, webCtx web.Context, user
 		func() {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Errorf("revoke apple account token panic: %v", err)
+					log.Errorf("revoke apple account jwt panic: %v", err)
 				}
 			}()
 
@@ -195,7 +195,7 @@ func (ctl *UserController) Destroy(ctx context.Context, webCtx web.Context, user
 				}
 				var resp apple.RevokeResponse
 				if err := client.RevokeAccessToken(ctx, req, &resp); err != nil && err != io.EOF {
-					log.Errorf("revoke apple access token failed: %v", err)
+					log.Errorf("revoke apple access jwt failed: %v", err)
 				}
 			}
 		}()

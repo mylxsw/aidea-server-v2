@@ -1,4 +1,4 @@
-package token
+package jwt
 
 import (
 	"github.com/mylxsw/aidea-chat-server/config"

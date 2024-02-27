@@ -1,4 +1,4 @@
-package token
+package jwt
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 )
 
 // ErrTokenInvalid token不合法错误
-var ErrTokenInvalid = errors.New("jwt token invalid")
+var ErrTokenInvalid = errors.New("jwt jwt invalid")
 
 // Token token对象
 type Token struct {

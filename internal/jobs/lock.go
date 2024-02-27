@@ -33,7 +33,7 @@ func (m *LockManager) TryLock(ctx context.Context) error {
 		var err error
 		m.value, err = randomToken()
 		if err != nil {
-			return fmt.Errorf("generate lock token failed: %w", err)
+			return fmt.Errorf("generate lock jwt failed: %w", err)
 		}
 	}
 

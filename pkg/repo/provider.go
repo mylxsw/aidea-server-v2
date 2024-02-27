@@ -23,6 +23,7 @@ func (Provider) Register(binder infra.Binder) {
 	binder.MustSingleton(NewEventRepo)
 	binder.MustSingleton(NewQuotaRepo)
 	binder.MustSingleton(NewQueueRepo)
+	binder.MustSingleton(NewRobotRepo)
 
 	// MySQL 数据库连接
 	binder.MustSingleton(func(conf *config.Config) (*sql.DB, error) {
@@ -74,4 +75,5 @@ type Repository struct {
 	Event *EventRepo `autowire:"@"`
 	Quota *QuotaRepo `autowire:"@"`
 	Queue *QueueRepo `autowire:"@"`
+	Robot *RobotRepo `autowire:"@"`
 }

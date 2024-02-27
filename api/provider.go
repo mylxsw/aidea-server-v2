@@ -7,10 +7,10 @@ import (
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/mylxsw/aidea-chat-server/api/auth"
 	"github.com/mylxsw/aidea-chat-server/config"
+	"github.com/mylxsw/aidea-chat-server/pkg/jwt"
 	"github.com/mylxsw/aidea-chat-server/pkg/rate"
 	"github.com/mylxsw/aidea-chat-server/pkg/repo"
 	"github.com/mylxsw/aidea-chat-server/pkg/service"
-	"github.com/mylxsw/aidea-chat-server/pkg/token"
 	"github.com/mylxsw/asteria/log"
 	"github.com/mylxsw/glacier/infra"
 	"github.com/mylxsw/glacier/listener"
@@ -74,13 +74,13 @@ func buildRouter(resolver infra.Resolver, router web.Router, mw web.RequestMiddl
 	)
 
 	// 添加 web 中间件
-	resolver.MustResolve(func(tk *token.Token, userSrv *service.UserService, limiter *redis_rate.Limiter) {
+	resolver.MustResolve(func(tk *jwt.Token, userSrv *service.UserService, limiter *redis_rate.Limiter) {
 		mws = append(mws, func(handler web.WebHandler) web.WebHandler {
 			return func(ctx web.Context) web.Response {
 				ctx.Response().Header("aidea-global-alert-id", "20231204")
-				//ctx.Response().Header("aidea-global-alert-type", "info")
-				//ctx.Response().Header("aidea-global-alert-pages", "")
-				//ctx.Response().Header("aidea-global-alert-msg", base64.StdEncoding.EncodeToString([]byte("服务器正在维护中，预计 2023 年 11 月 12 日 00:00:00 恢复，[查看详情](https://status.aicode.cc/status/aidea)。")))
+				//ctx.StreamResponse().Header("aidea-global-alert-type", "info")
+				//ctx.StreamResponse().Header("aidea-global-alert-pages", "")
+				//ctx.StreamResponse().Header("aidea-global-alert-msg", base64.StdEncoding.EncodeToString([]byte("服务器正在维护中，预计 2023 年 11 月 12 日 00:00:00 恢复，[查看详情](https://status.aicode.cc/status/aidea)。")))
 
 				return handler(ctx)
 			}

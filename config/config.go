@@ -18,7 +18,7 @@ type Config struct {
 	DebugWithSQL bool `json:"debug_with_sql,omitempty" yaml:"debug_with_sql,omitempty"`
 	// UniversalLinkConfig universal link configuration
 	UniversalLinkConfig string `json:"universal_link_config,omitempty" yaml:"universal_link_config,omitempty"`
-	// PrometheusToken Prometheus monitoring token
+	// PrometheusToken Prometheus monitoring jwt
 	PrometheusToken string `json:"prometheus_token,omitempty" yaml:"prometheus_token,omitempty"`
 
 	// DBURI database connection address
@@ -43,6 +43,9 @@ type Config struct {
 	WeChat WeChat `json:"wechat,omitempty" yaml:"wechat,omitempty"`
 	// Apple signIn configuration
 	Apple AppleSignIn `json:"apple,omitempty" yaml:"apple,omitempty"`
+
+	// EnableAnonymousChat whether to enable anonymous chat
+	EnableAnonymousChat bool `json:"enable_anonymous_chat,omitempty" yaml:"enable_anonymous_chat,omitempty"`
 }
 
 // WeChat configuration

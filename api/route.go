@@ -26,6 +26,7 @@ func routes(resolver infra.Resolver, r *web.MiddlewareRouter) {
 		controllers.NewAppleAuthController(resolver),
 		controllers.NewTaskController(resolver),
 		controllers.NewUserController(resolver),
+		controllers.NewChatController(resolver),
 	)
 }
 

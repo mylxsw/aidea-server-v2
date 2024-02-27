@@ -11,11 +11,11 @@ import (
 	"github.com/mylxsw/aidea-chat-server/internal/coins"
 	"github.com/mylxsw/aidea-chat-server/internal/consumer/tasks"
 	"github.com/mylxsw/aidea-chat-server/internal/queue"
+	"github.com/mylxsw/aidea-chat-server/pkg/jwt"
 	"github.com/mylxsw/aidea-chat-server/pkg/misc"
 	"github.com/mylxsw/aidea-chat-server/pkg/rate"
 	"github.com/mylxsw/aidea-chat-server/pkg/repo"
 	"github.com/mylxsw/aidea-chat-server/pkg/repo/model"
-	"github.com/mylxsw/aidea-chat-server/pkg/token"
 	"github.com/mylxsw/aidea-chat-server/pkg/wechat"
 	"github.com/mylxsw/asteria/log"
 	"github.com/mylxsw/glacier/infra"
@@ -35,7 +35,7 @@ type AuthController struct {
 	conf    *config.Config `autowire:"@"`
 	queue   *queue.Queue   `autowire:"@"`
 	limiter *rate.Limiter  `autowire:"@"`
-	tk      *token.Token   `autowire:"@"`
+	tk      *jwt.Token     `autowire:"@"`
 	rds     *redis.Client  `autowire:"@"`
 	wc      *wechat.WeChat `autowire:"@"`
 
@@ -207,13 +207,13 @@ func (ctl *AuthController) SignInOrUpWithSMSCode(ctx context.Context, webCtx web
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
-	// 微信绑定 token
+	// 微信绑定 jwt
 	wechatBindToken := strings.TrimSpace(webCtx.Input("wechat_bind_token"))
 	if wechatBindToken != "" {
 		if err := ctl.bindWeChatWithToken(ctx, user.Id, wechatBindToken); err != nil {
 			log.WithFields(log.Fields{
 				"username": username,
-				"token":    wechatBindToken,
+				"jwt":      wechatBindToken,
 			}).Errorf("failed to bind wechat: %s", err)
 		}
 	}
@@ -225,7 +225,7 @@ func (ctl *AuthController) SignInOrUpWithSMSCode(ctx context.Context, webCtx web
 func (ctl *AuthController) bindWeChatWithToken(ctx context.Context, userID int64, tokenValue string) error {
 	payload, err := ctl.tk.ParseToken(tokenValue)
 	if err != nil {
-		return errors.New("invalid token")
+		return errors.New("invalid jwt")
 	}
 
 	unionID := payload.StringValue("union_id")
@@ -233,7 +233,7 @@ func (ctl *AuthController) bindWeChatWithToken(ctx context.Context, userID int64
 	avatar := payload.StringValue("avatar")
 
 	if unionID == "" {
-		return errors.New("invalid token")
+		return errors.New("invalid jwt")
 	}
 
 	return ctl.repo.User.BindWeChat(ctx, userID, unionID, nickname, avatar)
@@ -947,13 +947,13 @@ func (ctl *AuthController) createAccount(ctx context.Context, webCtx web.Context
 		}
 	}
 
-	// 微信绑定 token
+	// 微信绑定 jwt
 	wechatBindToken := strings.TrimSpace(webCtx.Input("wechat_bind_token"))
 	if wechatBindToken != "" {
 		if err := ctl.bindWeChatWithToken(ctx, user.Id, wechatBindToken); err != nil {
 			log.WithFields(log.Fields{
 				"user_id": user.Id,
-				"token":   wechatBindToken,
+				"jwt":     wechatBindToken,
 			}).Errorf("failed to bind wechat: %s", err)
 		}
 	}
@@ -986,13 +986,13 @@ func (ctl *AuthController) SignInWithPassword(ctx context.Context, webCtx web.Co
 		return webCtx.JSONError("用户名或密码错误", http.StatusBadRequest)
 	}
 
-	// 微信绑定 token
+	// 微信绑定 jwt
 	wechatBindToken := strings.TrimSpace(webCtx.Input("wechat_bind_token"))
 	if wechatBindToken != "" {
 		if err := ctl.bindWeChatWithToken(ctx, user.Id, wechatBindToken); err != nil {
 			log.WithFields(log.Fields{
 				"user_id": user.Id,
-				"token":   wechatBindToken,
+				"jwt":     wechatBindToken,
 			}).Errorf("failed to bind wechat: %s", err)
 		}
 	}
@@ -1000,7 +1000,7 @@ func (ctl *AuthController) SignInWithPassword(ctx context.Context, webCtx web.Co
 	return webCtx.JSON(buildUserLoginRes(user, false, ctl.tk))
 }
 
-// TrySignInWithWechat 尝试使用微信登录，返回微信端用户信息 token + 用户是否存在
+// TrySignInWithWechat 尝试使用微信登录，返回微信端用户信息 jwt + 用户是否存在
 func (ctl *AuthController) TrySignInWithWechat(ctx context.Context, webCtx web.Context) web.Response {
 	code := strings.TrimSpace(webCtx.Input("code"))
 	if code == "" {
@@ -1009,7 +1009,7 @@ func (ctl *AuthController) TrySignInWithWechat(ctx context.Context, webCtx web.C
 
 	accessToken, err := ctl.wc.OAuthAccessToken(ctx, code)
 	if err != nil {
-		log.WithFields(log.Fields{"code": code}).Errorf("failed to get wechat access token: %s", err)
+		log.WithFields(log.Fields{"code": code}).Errorf("failed to get wechat access jwt: %s", err)
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
@@ -1024,7 +1024,7 @@ func (ctl *AuthController) TrySignInWithWechat(ctx context.Context, webCtx web.C
 		"code":         code,
 		"access_token": accessToken,
 		"user_info":    userInfo,
-	}).Debugf("wechat access token")
+	}).Debugf("wechat access jwt")
 
 	bond, err := ctl.repo.User.WeChatIsBond(ctx, userInfo.UnionID)
 	if err != nil {
@@ -1032,28 +1032,28 @@ func (ctl *AuthController) TrySignInWithWechat(ctx context.Context, webCtx web.C
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
-	payload := token.Claims{
+	payload := jwt.Claims{
 		"union_id": userInfo.UnionID,
 		"nickname": userInfo.NickName,
 		"avatar":   userInfo.HeadImgURL,
 	}
 
 	return webCtx.JSON(web.M{
-		"token": ctl.tk.CreateToken(payload, 5*time.Minute),
+		"jwt":   ctl.tk.CreateToken(payload, 5*time.Minute),
 		"exist": bond,
 	})
 }
 
 // SignInWithWechat 使用微信登录
 func (ctl *AuthController) SignInWithWechat(ctx context.Context, webCtx web.Context) web.Response {
-	accessToken := webCtx.Input("token")
+	accessToken := webCtx.Input("jwt")
 	if accessToken == "" {
-		return webCtx.JSONError("token 不能为空", http.StatusBadRequest)
+		return webCtx.JSONError("jwt 不能为空", http.StatusBadRequest)
 	}
 
 	payload, err := ctl.tk.ParseToken(accessToken)
 	if err != nil {
-		return webCtx.JSONError("token 无效", http.StatusBadRequest)
+		return webCtx.JSONError("jwt 无效", http.StatusBadRequest)
 	}
 
 	unionID := payload.StringValue("union_id")
@@ -1061,12 +1061,12 @@ func (ctl *AuthController) SignInWithWechat(ctx context.Context, webCtx web.Cont
 	avatar := payload.StringValue("avatar")
 
 	if unionID == "" {
-		return webCtx.JSONError("token 无效", http.StatusBadRequest)
+		return webCtx.JSONError("jwt 无效", http.StatusBadRequest)
 	}
 
 	user, eventID, err := ctl.repo.User.SignInWithWeChat(ctx, unionID, nickname, avatar)
 	if err != nil {
-		log.WithFields(log.Fields{"token": accessToken}).Errorf("failed to sign in with wechat: %s", err)
+		log.WithFields(log.Fields{"jwt": accessToken}).Errorf("failed to sign in with wechat: %s", err)
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
@@ -1097,7 +1097,7 @@ func (ctl *AuthController) BindWeChat(ctx context.Context, webCtx web.Context, u
 
 	accessToken, err := ctl.wc.OAuthAccessToken(ctx, code)
 	if err != nil {
-		log.WithFields(log.Fields{"code": code}).Errorf("failed to get wechat access token: %s", err)
+		log.WithFields(log.Fields{"code": code}).Errorf("failed to get wechat access jwt: %s", err)
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
@@ -1112,7 +1112,7 @@ func (ctl *AuthController) BindWeChat(ctx context.Context, webCtx web.Context, u
 		"code":         code,
 		"access_token": accessToken,
 		"user_info":    userInfo,
-	}).Debugf("wechat access token")
+	}).Debugf("wechat access jwt")
 
 	if err := ctl.repo.User.BindWeChat(ctx, user.ID, userInfo.UnionID, userInfo.NickName, userInfo.HeadImgURL); err != nil {
 		log.WithFields(log.Fields{
@@ -1153,13 +1153,13 @@ func (ctl *AuthController) SignInWithApple(ctx context.Context, webCtx web.Conte
 		return webCtx.JSONError(InternalServerError, http.StatusInternalServerError)
 	}
 
-	// 微信绑定 token
+	// 微信绑定 jwt
 	wechatBindToken := strings.TrimSpace(webCtx.Input("wechat_bind_token"))
 	if wechatBindToken != "" {
 		if err := ctl.bindWeChatWithToken(ctx, user.Id, wechatBindToken); err != nil {
 			log.WithFields(log.Fields{
 				"user_id": user.Id,
-				"token":   wechatBindToken,
+				"jwt":     wechatBindToken,
 			}).Errorf("failed to bind wechat: %s", err)
 		}
 	}
@@ -1198,11 +1198,11 @@ func appleSignIn(
 
 	var resp apple.ValidationResponse
 	if err := client.VerifyAppToken(ctx, req, &resp); err != nil {
-		return nil, false, fmt.Errorf("verify app token failed: %s", err)
+		return nil, false, fmt.Errorf("verify app jwt failed: %s", err)
 	}
 
 	if resp.Error != "" {
-		return nil, false, fmt.Errorf("verify app token failed: %s(%s)", resp.Error, resp.ErrorDescription)
+		return nil, false, fmt.Errorf("verify app jwt failed: %s(%s)", resp.Error, resp.ErrorDescription)
 	}
 
 	unique, err := apple.GetUniqueID(resp.IDToken)
@@ -1247,7 +1247,7 @@ func appleSignIn(
 }
 
 // buildUserLoginRes 构建用户登录响应
-func buildUserLoginRes(user *model.Users, isSignup bool, tk *token.Token) web.M {
+func buildUserLoginRes(user *model.Users, isSignup bool, tk *jwt.Token) web.M {
 	if user.Phone != "" {
 		user.Phone = misc.MaskPhoneNumber(user.Phone)
 	}
@@ -1259,7 +1259,7 @@ func buildUserLoginRes(user *model.Users, isSignup bool, tk *token.Token) web.M 
 		"phone":       user.Phone,
 		"is_new_user": isSignup,
 		"reward":      coins.BindPhoneGiftCoins,
-		"token": tk.CreateToken(token.Claims{
+		"jwt": tk.CreateToken(jwt.Claims{
 			"id": user.Id,
 		}, 6*30*24*time.Hour),
 	}

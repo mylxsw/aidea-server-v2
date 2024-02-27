@@ -56,3 +56,7 @@ apple:
 wechat:
   app_id: ""
   secret: ""
+  
+### 聊天配置
+### 是否启用匿名聊天
+enable_anonymous_chat: false

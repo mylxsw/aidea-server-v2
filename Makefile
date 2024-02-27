@@ -4,7 +4,7 @@ DIR := $(shell pwd)
 LDFLAGS := -s -w -X main.Version=$(Version) -X main.GitCommit=$(GitCommit) -X main.DEBUG=true
 
 run:
-	go run cmd/main.go --conf config.local.yaml --listen :8080
+	go run cmd/main.go --conf config.local.yaml --listen :8080 --log-color
 
 build:
 	go build -race -ldflags "$(LDFLAGS)" -o build/debug/aidea-chat-server cmd/main.go
