@@ -7,6 +7,7 @@ import (
 	"github.com/mylxsw/glacier/starter/app"
 	"gopkg.in/yaml.v3"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -46,6 +47,12 @@ type Config struct {
 
 	// EnableAnonymousChat whether to enable anonymous chat
 	EnableAnonymousChat bool `json:"enable_anonymous_chat,omitempty" yaml:"enable_anonymous_chat,omitempty"`
+
+	// OpenAI compatible configuration
+	OpenAI OpenAIConfig `json:"openai,omitempty" yaml:"openai,omitempty"`
+
+	// Models supported model list
+	Models []Model `json:"models,omitempty" yaml:"models,omitempty"`
 }
 
 // WeChat configuration
@@ -75,6 +82,48 @@ func (conf *Config) Init() {
 
 	conf.QueueWorkers = misc.IntDefault(conf.QueueWorkers, 10)
 	conf.EnableScheduler = misc.BoolDefault(conf.EnableScheduler, true)
+
+	conf.OpenAI.AzureAPIVersion = misc.StringDefault(conf.OpenAI.AzureAPIVersion, "2023-05-15")
+	conf.OpenAI.ServerURL = strings.TrimSuffix(misc.StringDefault(conf.OpenAI.ServerURL, "https://api.openai.com/v1"), "/")
+
+	if len(conf.Models) == 0 {
+		conf.Models = []Model{
+			{
+				ID:         "gpt-3.5-turbo",
+				Name:       "GPT-3.5 Turbo",
+				AvatarURL:  "https://ssl.aicode.cc/ai-server/assets/avatar/gpt35.png",
+				Price:      3,
+				MaxContext: 4000,
+			},
+			{
+				ID:         "gpt-4",
+				Name:       "GPT-4",
+				AvatarURL:  "https://ssl.aicode.cc/ai-server/assets/avatar/gpt4.png",
+				Price:      50,
+				MaxContext: 8000,
+			},
+			{
+				ID:         "gpt-4-turbo-preview",
+				Name:       "GPT-4 Turbo",
+				AvatarURL:  "https://ssl.aicode.cc/ai-server/assets/avatar/gpt4-preview.png",
+				Price:      30,
+				MaxContext: 128000,
+			},
+			{
+				ID:         "gpt-4-vision-preview",
+				Name:       "GPT-4 Vision",
+				AvatarURL:  "https://ssl.aicode.cc/ai-server/assets/avatar/gpt4-preview.png",
+				Price:      30,
+				MaxContext: 4000,
+			},
+		}
+	}
+
+	for i := 0; i < len(conf.Models); i++ {
+		if conf.Models[i].MaxContext == 0 {
+			conf.Models[i].MaxContext = 4000
+		}
+	}
 }
 
 type Mail struct {

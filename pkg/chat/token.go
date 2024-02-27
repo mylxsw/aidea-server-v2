@@ -23,7 +23,7 @@ func ReduceContextByCount(messages Messages, maxCount int) Messages {
 func ReduceContextByTokens(messages Messages, model string, maxTokens int) (reducedMessages Messages, tokenCount int, err error) {
 	num, err := MessageTokenCount(messages, model)
 	if err != nil {
-		return nil, 0, fmt.Errorf("MessageTokenCount: %v", err)
+		return nil, 0, fmt.Errorf("message token count: %v", err)
 	}
 
 	if num <= maxTokens {
@@ -36,7 +36,7 @@ func ReduceContextByTokens(messages Messages, model string, maxTokens int) (redu
 	}
 
 	if len(messages) <= 1 {
-		return nil, 0, errors.New("对话上下文过长，无法继续生成")
+		return nil, 0, errors.New("conversation context is too long and cannot be generated further")
 	}
 
 	return ReduceContextByTokens(messages[1:], model, maxTokens)

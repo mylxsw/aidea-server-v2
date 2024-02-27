@@ -1,6 +1,9 @@
 package repo
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 type RobotRepo struct {
 	db *sql.DB
@@ -67,4 +70,13 @@ type Robot struct {
 
 	// RobotMeta some bot meta information
 	RobotMeta RobotMeta `json:"robot_meta,omitempty"`
+}
+
+// GetRobotByID get robot by id
+func (repo *RobotRepo) GetRobotByID(ctx context.Context, robotID string) (*Robot, error) {
+	return &Robot{
+		RobotID: robotID,
+		Type:    RobotTypeModelDriven,
+		Model:   robotID,
+	}, nil
 }

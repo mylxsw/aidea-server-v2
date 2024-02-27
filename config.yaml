@@ -24,7 +24,7 @@ redis_port: 6379
 ### prometheus 监控密钥，留空则不需要鉴权
 # prometheus_token: ""
 
-### HTTP 代理放置，支持 http、https、socks5，代理类型由 URL schema 决定，如果 scheme 为空，则默认为 http
+### HTTP 代理，支持 http、https、socks5，代理类型由 URL schema 决定，如果 scheme 为空，则默认为 http
 # proxy_url: ""
 
 ### 任务队列：用于处理图片生成、邮件发送、短信发送、用户注册等耗时任务
@@ -60,3 +60,45 @@ wechat:
 ### 聊天配置
 ### 是否启用匿名聊天
 enable_anonymous_chat: false
+
+### 模型配置 (OpenAI compatible configuration)
+openai:
+  # API 服务器地址，末尾请保留版本号
+  server_url: "https://api.openai.com/v1"
+  # API Key
+  api_key: ""
+  # API Organization ID
+  organization: ""
+  # 是否使用 Azure API
+  use_azure: false
+  # Azure API Version
+  azure_api_version: "2023-05-15"
+
+### 支持的模型列表
+### - id 模型 ID
+### - name 模型名称
+### - avatar_url 模型头像 URL
+### - price 模型价格，按照 1000 Token 计费，计费单位为 智慧果
+### - capabilities 模型能力，数组格式，目前支持 vision（视觉）
+models:
+  - id: gpt-3.5-turbo
+    name: "GPT-3.5 Turbo"
+    avatar_url: https://ssl.aicode.cc/ai-server/assets/avatar/gpt35.png
+    price: 3
+    max_context: 4000
+  - id: gpt-4
+    name: "GPT-4"
+    avatar_url: https://ssl.aicode.cc/ai-server/assets/avatar/gpt4.png
+    price: 50
+    max_context: 8000
+  - id: gpt-4-turbo-preview
+    name: "GPT-4 Turbo"
+    avatar_url: https://ssl.aicode.cc/ai-server/assets/avatar/gpt4-preview.png
+    price: 30
+    max_context: 128000
+  - id: gpt-4-vision-preview
+    name: "GPT-4 Vision"
+    avatar_url: https://ssl.aicode.cc/ai-server/assets/avatar/gpt4-preview.png
+    price: 30
+    max_context: 4000
+    capabilities: ["vision"]

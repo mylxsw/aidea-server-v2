@@ -2,72 +2,181 @@ package chat
 
 import (
 	"context"
-	"strconv"
+	"fmt"
+	"github.com/mylxsw/aidea-chat-server/config"
+	"github.com/mylxsw/aidea-chat-server/pkg/repo"
+	"github.com/mylxsw/asteria/log"
+	"github.com/mylxsw/glacier/infra"
+	"github.com/mylxsw/go-utils/array"
+	"github.com/sashabaranov/go-openai"
+	"strings"
 	"time"
 )
 
 // Chatter represents a chat completion API
 type Chatter struct {
+	conf   *config.Config   `autowire:"@"`
+	openai *OpenAIClient    `autowire:"@"`
+	repo   *repo.Repository `autowire:"@"`
+
+	// models model_id => model mapping
+	models map[string]config.Model
 }
 
-// New creates a new Chatter instance
-func New() *Chatter {
-	return &Chatter{}
+// NewChatter creates a new Chatter instance
+func NewChatter(resolver infra.Resolver) *Chatter {
+	chatter := &Chatter{}
+	resolver.MustAutoWire(chatter)
+
+	chatter.models = array.ToMap(chatter.conf.Models, func(item config.Model, _ int) string {
+		return item.ID
+	})
+
+	return chatter
 }
 
 // ChatStream for handling streaming chat requests
 func (chat *Chatter) ChatStream(ctx context.Context, req Request) (<-chan StreamResponse, error) {
-	// TODO 根据 robotID 获取对应的模型
-	model := req.RobotID
+	// 根据 robotID 获取对应的模型
+	robot, err := chat.repo.Robot.GetRobotByID(ctx, req.RobotID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid robot: %w", err)
+	}
 
-	promptTokenCount, _ := MessageTokenCount(req.Messages, model)
-	stream := make(chan StreamResponse)
-	// TODO
-	go func() {
-		defer close(stream)
+	// TODO 根据机器人的类型进行不同的处理
+	if robot.Type != repo.RobotTypeModelDriven {
+		return nil, fmt.Errorf("unsupported robot type: %x", robot.Type)
+	}
 
-		fakeMessage := []rune("白炅翰和朴信爱这对韩国夫妇是信阳师范大学的韩语老师，夫妇二人从在北京求学相识起，就与中国结下不解之缘。如今的他们不仅传授知识，更积极推动中韩文化交流。走近他们，感受一场关于爱、文化和传承的心灵之旅。")
+	// 查询模型配置信息
+	model, ok := chat.models[robot.Model]
+	if !ok {
+		return nil, fmt.Errorf("model not found: %s", robot.Model)
+	}
 
-		replyText := ""
-		for i := 0; i < len(fakeMessage); i++ {
-			time.Sleep(30 * time.Millisecond)
+	// 确保上下文长度满足要求
+	req.Messages, _, err = ReduceContextByTokens(req.Messages, model.ID, model.MaxContextForInput())
+	if err != nil {
+		return nil, ErrContextExceedLimit
+	}
 
-			replyText += string(fakeMessage[i])
-			state := append(req.Messages, Message{
-				Role:    "assistant",
-				Content: replyText,
-			})
+	promptTokenCount, _ := MessageTokenCount(req.Messages, model.ID)
+	usage := Usage{
+		PromptTokens: int64(promptTokenCount),
+	}
 
-			resp := StreamResponse{
-				ID:      strconv.Itoa(i),
-				Created: time.Now().Unix(),
-				Choices: []StreamChoice{
-					{
-						Index: 0,
-						Delta: Delta{
-							Content: string(fakeMessage[i]),
-							Role:    "assistant",
-						},
-					},
-				},
-			}
+	// create openai request
+	openaiRequest := openai.ChatCompletionRequest{
+		Model:  model.ID,
+		Stream: true,
+		Messages: array.Map(req.Messages, func(item Message, _ int) openai.ChatCompletionMessage {
+			// If the model supports vision, the message content needs to be converted into the corresponding format
+			if model.SupportVision() {
+				contents := array.Map(item.MultipartContents, func(content *MultipartContent, _ int) openai.ChatMessagePart {
+					part := openai.ChatMessagePart{Text: content.Text, Type: openai.ChatMessagePartType(content.Type)}
+					if openai.ChatMessagePartType(content.Type) == openai.ChatMessagePartTypeImageURL {
+						url := content.ImageURL.URL
+						part.ImageURL = &openai.ChatMessageImageURL{
+							URL:    url,
+							Detail: openai.ImageURLDetail(content.ImageURL.Detail),
+						}
+					}
 
-			tokenCount, _ := MessageTokenCount(state, model)
-			if tokenCount > 0 && promptTokenCount > 0 {
-				resp.Usage = &Usage{
-					PromptTokens:     int64(promptTokenCount),
-					CompletionTokens: int64(tokenCount - promptTokenCount),
-					TotalTokens:      int64(tokenCount),
+					return part
+				})
+
+				return openai.ChatCompletionMessage{
+					Role:         item.Role,
+					MultiContent: contents,
 				}
 			}
 
+			return openai.ChatCompletionMessage{
+				Role:    item.Role,
+				Content: item.Content,
+			}
+		}),
+	}
+
+	startTime := time.Now()
+
+	stream, err := chat.openai.ChatStream(ctx, openaiRequest)
+	if err != nil {
+		if strings.Contains(err.Error(), "content management policy") {
+			log.With(err).Errorf("violation of Azure OpenAI content management policy")
+			return nil, ErrContentFilter
+		}
+
+		return nil, err
+	}
+
+	res := make(chan StreamResponse)
+	go func() {
+		defer close(res)
+
+		replyText := ""
+		for {
 			select {
-			case stream <- resp:
 			case <-ctx.Done():
 				return
+			case data, ok := <-stream:
+				if !ok {
+					return
+				}
+
+				if data.Code != "" {
+					res <- StreamResponse{
+						ErrorMessage: data.ErrorMessage,
+						ErrorCode:    data.Code,
+					}
+					return
+				}
+
+				if usage.FirstLetterDelay == 0 {
+					usage.FirstLetterDelay = time.Since(startTime).Milliseconds()
+				}
+
+				resp := StreamResponse{
+					ID:      data.ChatResponse.ID,
+					Created: data.ChatResponse.Created,
+					Choices: []StreamChoice{
+						{
+							Index: 0,
+							Delta: Delta{
+								Content: array.Reduce(
+									data.ChatResponse.Choices,
+									func(carry string, item openai.ChatCompletionStreamChoice) string {
+										return carry + item.Delta.Content
+									},
+									"",
+								),
+								Role: "assistant",
+							},
+							FinishReason: string(data.ChatResponse.Choices[len(data.ChatResponse.Choices)-1].FinishReason),
+						},
+					},
+				}
+
+				replyText += resp.DeltaText()
+				tokenCount, _ := MessageTokenCount(
+					append(req.Messages, Message{
+						Role:    "assistant",
+						Content: replyText,
+					}),
+					model.ID,
+				)
+
+				usage.ConsumeInMilli = time.Since(startTime).Milliseconds()
+				if tokenCount > 0 {
+					usage.CompletionTokens = int64(tokenCount - promptTokenCount)
+					usage.TotalTokens = int64(tokenCount)
+				}
+
+				resp.Usage = &usage
+				res <- resp
 			}
 		}
 	}()
 
-	return stream, nil
+	return res, nil
 }

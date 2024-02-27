@@ -2,6 +2,7 @@ package chat
 
 import (
 	"encoding/json"
+	"github.com/mylxsw/go-utils/array"
 	"time"
 )
 
@@ -26,6 +27,11 @@ type Usage struct {
 	CompletionTokens int64 `json:"completion_tokens,omitempty"`
 	PromptTokens     int64 `json:"prompt_tokens,omitempty"`
 	TotalTokens      int64 `json:"total_tokens,omitempty"`
+
+	// FirstLetterDelay first character delay time, in milliseconds
+	FirstLetterDelay int64 `json:"first_letter_delay,omitempty"`
+	// ConsumeInMilli total consume time, in milliseconds
+	ConsumeInMilli int64 `json:"consume_in_milli,omitempty"`
 }
 
 func (resp StreamResponse) JSON() string {
@@ -70,11 +76,7 @@ func NewSystemStreamResponse(id string, delta string, finishReason string) Strea
 
 // DeltaText returns the delta content of the first choice.
 func (resp StreamResponse) DeltaText() string {
-	if len(resp.Choices) > 0 {
-		return resp.Choices[0].Delta.Content
-	}
-
-	return ""
+	return array.Reduce(resp.Choices, func(carry string, item StreamChoice) string { return carry + item.Delta.Content }, "")
 }
 
 type StreamChoice struct {

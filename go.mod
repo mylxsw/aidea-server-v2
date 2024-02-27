@@ -56,6 +56,7 @@ require (
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sashabaranov/go-openai v1.20.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/tideland/golib v4.24.2+incompatible // indirect
 	github.com/urfave/cli/v2 v2.23.7 // indirect

@@ -174,8 +174,8 @@ func (ctl *ChatController) handleChat(ctx context.Context, sw *misc.StreamWriter
 			return "", nil, ErrChatResponseHasSent
 		}
 
-		log.F(log.M{"req": req, "err": err, "retry_times": retryTimes}).Errorf("chat stream failed")
-		misc.NoError(sw.WriteErrorStream(errors.New(InternalServerError), http.StatusInternalServerError))
+		log.F(log.M{"req": req, "retry_times": retryTimes}).Errorf("chat stream failed: %s", err)
+		misc.NoError(sw.WriteErrorStream(err, http.StatusInternalServerError))
 		return "", nil, ErrChatResponseHasSent
 	}
 
